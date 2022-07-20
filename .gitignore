@@ -1,2 +1,4 @@
 preprocess/hams/*
 preprocess/ham.mbox
+
+!/**/.gitkeep
