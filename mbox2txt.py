@@ -10,10 +10,9 @@ import re
 from types import NoneType
 
 script_dir = os.path.dirname(__file__)
-rel_path = "hams"
+rel_path = "spams" #edit to save to different directory
 abs_file_path = os.path.join(script_dir, rel_path)
 
-# Just ignore these lines.
 # Python's mbox reader finds a way to return Messages that don't
 # have these super-important methods. This hack adds them.
 setattr(email.message.Message, '_find_body', email.message.MIMEPart._find_body)
@@ -45,7 +44,7 @@ Subject: {}""".format(message['From'], message['To'], message['Cc'], message['Da
     except AttributeError as err:
         raise Exception("Unreadable body") 
     
-    body = remove_bad(body)
+    body = strip_message(body)
 
     #Pass through word counter
     wordcounter(message['From'])
@@ -69,12 +68,18 @@ def write_message(message, i):
     with open(newfile, 'w', encoding="utf-8") as f:
         f.write(message_to_text(message))
 
+from string import digits
+
 # Remove unwanted strings and characters
-def remove_bad(message):
-    str1 = re.sub(r'http\S+', '', message)
-    str2 = str1.replace("&zwnj;", "")
-    str3 = str2.replace("&nbsp;","")
-    return str3
+def strip_message(message):
+
+    str_message = re.sub(r'http\S+', '', message) #remove any
+    str_message = str_message.replace("&zwnj;", "")
+    str_message = str_message.replace("&nbsp;","")
+    str_message = str_message.replace("-","")
+    str_message = str_message.replace("—","")
+    str_message = str_message.replace("+","")
+    return str_message
 
 # Reads the given mbox file and outputs all messages and attachments
 # as files in the current working directory.
@@ -84,7 +89,10 @@ def main(filename):
         write_message(message, i + 1)
 
 
-stopwords = ['to','the','you','your','of','and','{','}','\u200c']
+stopwordstxt = open("stopwords.txt", "r")
+stopwords = stopwordstxt.read().splitlines()
+print(stopwords)
+##stopwords = ['to','the','you','your','of','and','{','}','\u200c']
 wordcount = {}
 
 def wordcounter(str):
@@ -106,7 +114,7 @@ def wordcounter(str):
 
 
 # Driver code
-filename = sys.argv[1]
+filename = sys.argv[1] #first argument is mbox file name
 main(filename)
 
 
@@ -114,5 +122,5 @@ main(filename)
 import collections
 
 word_counter = collections.Counter(wordcount)
-for word, count in word_counter.most_common(10):
+for word, count in word_counter.most_common(300):
     print(word, ": ", count)

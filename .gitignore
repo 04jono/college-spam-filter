@@ -1,4 +1,8 @@
-preprocess/hams/*
-preprocess/ham.mbox
+hams/*
+spams/*
+
+*.mbox
+*.txt
+*.csv
 
 !/**/.gitkeep
