@@ -9,8 +9,14 @@ import os
 import re
 from types import NoneType
 
+from numpy import true_divide
+
 script_dir = os.path.dirname(__file__)
-rel_path = "spams" #edit to save to different directory
+
+### Outputs
+csvfilename = 'wordcount.csv'
+rel_path = "spams" #directory of individual txt files
+
 abs_file_path = os.path.join(script_dir, rel_path)
 
 # Python's mbox reader finds a way to return Messages that don't
@@ -47,10 +53,6 @@ Subject: {}""".format(message['From'], message['To'], message['Cc'], message['Da
     body = strip_message(body)
 
     #Pass through word counter
-    wordcounter(message['From'])
-    wordcounter(message['To'])
-    wordcounter(message['Cc'])
-    wordcounter(message['Date'])
     wordcounter(message['Subject'])
     wordcounter(body)
 
@@ -91,8 +93,9 @@ def main(filename):
 
 stopwordstxt = open("stopwords.txt", "r")
 stopwords = stopwordstxt.read().splitlines()
-print(stopwords)
-##stopwords = ['to','the','you','your','of','and','{','}','\u200c']
+add_stopwords = [u'\u200c',u'\U0001f3b6',u'\U0001f4f7',u'\U0001f3a7',u'\u270d']
+stopwords.extend(add_stopwords)
+
 wordcount = {}
 
 def wordcounter(str):
@@ -111,16 +114,44 @@ def wordcounter(str):
                 wordcount[word] += 1
 
 
+#check if string contains number
+def containsNumber(str):
+    if True in [char.isdigit() for char in str]:
+        return True
+    else:
+        return False
+
+#check if string contains undesirable characters
+def containsBadCharacters(str):
+    badlist = ['@', '<', '-', '>','(',')','=','*',';','[',']','#','\'','?','div','wrapper','font','img','logo','padding','text','align','border','width', 'mso', 'www','edu','\\','/','&']
+    if any(e in str for e in badlist):
+        return True
+    else:
+        return False
 
 
-# Driver code
+
+### Driver code
 filename = sys.argv[1] #first argument is mbox file name
 main(filename)
 
 
-# Word Counter (prints to console)
+### Word Counter (prints to csv)
 import collections
+import csv
 
 word_counter = collections.Counter(wordcount)
 for word, count in word_counter.most_common(300):
     print(word, ": ", count)
+
+csvfile = open(csvfilename, 'w',newline='')
+writer = csv.writer(csvfile)
+for word, count in word_counter.most_common():
+    if(containsNumber(word) or containsBadCharacters(word)):
+        continue
+    try:
+        row = [word, count]
+        writer.writerow(row)
+    except:
+        continue
+    
