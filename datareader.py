@@ -1,5 +1,5 @@
-#Modified from adamhooper's mbox to overview script
-#https://gist.github.com/adamhooper/7250f34aa26246ae18dd805f7ce880a0
+# Heavily Modified from adamhooper's mbox to overview script
+# https://gist.github.com/adamhooper/7250f34aa26246ae18dd805f7ce880a0
 
 
 import email.message
@@ -14,8 +14,10 @@ from numpy import true_divide
 script_dir = os.path.dirname(__file__)
 
 ### Outputs
-csvfilename = 'wordcount.csv'
-rel_path = "spams" #directory of individual txt files
+messagetype = sys.argv[1] # First argument, either 'ham' or 'spam'
+message_counter = 0
+csvfilename = messagetype + "wordcount.csv"
+rel_path = messagetype + "s"
 
 abs_file_path = os.path.join(script_dir, rel_path)
 
@@ -69,6 +71,8 @@ def write_message(message, i):
     newfile = os.path.join(abs_file_path, ('message[%d].txt' % (i)))
     with open(newfile, 'w', encoding="utf-8") as f:
         f.write(message_to_text(message))
+    global message_counter
+    message_counter += 1
 
 from string import digits
 
@@ -91,6 +95,7 @@ def main(filename):
         write_message(message, i + 1)
 
 
+# Word Counter
 stopwordstxt = open("stopwords.txt", "r")
 stopwords = stopwordstxt.read().splitlines()
 add_stopwords = [u'\u200c',u'\U0001f3b6',u'\U0001f4f7',u'\U0001f3a7',u'\u270d']
@@ -123,7 +128,7 @@ def containsNumber(str):
 
 #check if string contains undesirable characters
 def containsBadCharacters(str):
-    badlist = ['@', '<', '-', '>','(',')','=','*',';','[',']','#','\'','?','div','wrapper','font','img','logo','padding','text','align','border','width', 'mso', 'www','edu','\\','/','&']
+    badlist = ['@', '<', '-', '>','(',')','=','*',';','[',']','#','\'','?','div','wrapper','font','img','logo','padding','text','align','border','width', 'mso', 'www','\\','/','&', '$']
     if any(e in str for e in badlist):
         return True
     else:
@@ -132,7 +137,7 @@ def containsBadCharacters(str):
 
 
 ### Driver code
-filename = sys.argv[1] #first argument is mbox file name
+filename = messagetype + ".mbox" #first argument is mbox file name
 main(filename)
 
 
@@ -141,8 +146,6 @@ import collections
 import csv
 
 word_counter = collections.Counter(wordcount)
-for word, count in word_counter.most_common(300):
-    print(word, ": ", count)
 
 csvfile = open(csvfilename, 'w',newline='')
 writer = csv.writer(csvfile)
@@ -154,4 +157,12 @@ for word, count in word_counter.most_common():
         writer.writerow(row)
     except:
         continue
+
+total = ["$TOTAL", sum(wordcount.values())]
+writer.writerow(total)
+
+numMessages = ["$NUMMESSAGES", message_counter]
+writer.writerow(numMessages)
+
+
     
