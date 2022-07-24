@@ -1,9 +1,16 @@
 # ignore ML stuff
-hams/*
-spams/*
+data/hams/*
+data/spams/*
 
 *.mbox
 *.txt
 *.csv
+
+# ignore node modules
+node_modules/*
+
+
+credentials.json
+token.json
 
 !/**/.gitkeep
