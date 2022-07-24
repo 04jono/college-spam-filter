@@ -66,12 +66,13 @@ function getNewToken(oAuth2Client, callback) {
   });
 }
 
-var messageID = "";
 
 async function start(auth){
-  await getLatestID(auth);
+  const messageID = await getLatestID(auth);
 
-  getLatestMessage(auth, messageID);
+  const messageToEval = await getLatestMessage(auth, messageID);
+
+  console.log(messageToEval);
 }
 
 function getLatestID(auth) {
@@ -82,29 +83,40 @@ function getLatestID(auth) {
       userId: 'me',
       maxResults: 2,
     }, (err, res) => {
-      if (err) return console.log('The API returned an error: ' + err);
+      if (err) reject("API ERROR");
       const messages = res.data.messages;
       if (messages.length) {
-        messageID = messages[1].id;
-        resolve();
+        var messageID = messages[1].id;
+        resolve(messageID);
       } else {
-        console.log("No Messages Found");
-        reject();
+        reject("No messages found");
       }
     });
   });
 }
 
-function getLatestMessage(auth){
-  const gmail = google.gmail({version: 'v1', auth});
-  //Retrieve message from ID
-  gmail.users.messages.get({
-    userId: 'me',
-    id: messageID,
-  }, (err, res) => {
-    if (err) return console.log('The API returned an error: ' + err);
-    let data = JSON.stringify(res.data.payload.parts[0].body.data);
-    let buffer = new Buffer.from(data, "base64");
-    console.log(buffer.toString());
+function getLatestMessage(auth, messageID){
+  return new Promise((resolve, reject) => {
+    const gmail = google.gmail({version: 'v1', auth});
+    //Retrieve message from ID
+    gmail.users.messages.get({
+      userId: 'me',
+      id: messageID,
+    }, (err, res) => {
+      if (err) reject("API ERROR");
+
+      let data = "";
+      //Gmail API JSON objects are not standardized for where message data can be found, try both:
+      try{
+        data = JSON.stringify(res.data.payload.parts[0].body.data); //Plain text emails
+      }catch(error){
+        data = JSON.stringify(res.data.payload.body.data); //Heavily formatted emails
+      }
+
+      let buffer = new Buffer.from(data, "base64");
+      var messageString = buffer.toString();
+      resolve(messageString);
+    });
+
   });
 }
