@@ -2,6 +2,11 @@
 
 import csv
 import re
+import os
+import sys
+
+
+script_dir = os.path.dirname(__file__)
 
 # Copied from datareader
 def containsNumber(str):
@@ -35,6 +40,9 @@ def strip_message(message):
 hamcsv = 'hamwordcount.csv'
 spamcsv = 'spamwordcount.csv'
 
+hamcsv = abs_file_path = os.path.join(script_dir, hamcsv)
+spamcsv = abs_file_path = os.path.join(script_dir, spamcsv)
+
 # ML parameters
 alpha = 1
 
@@ -59,8 +67,13 @@ spam_total = int(spam_hist.get('$TOTAL'))
 spam_probs = {}
 spam_probs = {key:(int(value)+alpha)/spam_total for key, value in spam_hist.items()}
 
-prior_ham = int(ham_hist.get('$NUMMESSAGES')) / (int(ham_hist.get('$NUMMESSAGES')) + int(spam_hist.get('$NUMMESSAGES')))
-prior_spam = int(spam_hist.get('$NUMMESSAGES')) / (int(ham_hist.get('$NUMMESSAGES')) + int(spam_hist.get('$NUMMESSAGES')))
+
+### Prior probabilities can be assumed from the training set or simply set to 50/50
+
+#prior_ham = int(ham_hist.get('$NUMMESSAGES')) / (int(ham_hist.get('$NUMMESSAGES')) + int(spam_hist.get('$NUMMESSAGES')))
+#prior_spam = int(spam_hist.get('$NUMMESSAGES')) / (int(ham_hist.get('$NUMMESSAGES')) + int(spam_hist.get('$NUMMESSAGES')))
+prior_ham = 0.50
+prior_spam = 0.50
 
 def containsNumber(str):
     if True in [char.isdigit() for char in str]:
@@ -72,10 +85,11 @@ def containsNumber(str):
 def evaluate(message):
 
     #Print to console message (debug)
-    print("Message: ", message)
 
     #Clean up message
     message = strip_message(message)
+
+    print("Message: ", message)
 
     for word in message.lower().split():
         # Clean up message
@@ -109,19 +123,5 @@ def evaluate(message):
 
 
 ## Script to execute
-evaluate("How can one summer change your life? This summer alone, Westminster students are working for more than 60 different businesses and organizations, ranging from theme parks to international accounting firms. And, if research is your thing, you can also apply to our Summer Research Fellows program and spend the summer conducting in-depth research with a Westminster faculty mentor. The Summer 2022 student-faculty pairs are working on research projects in biology, chemistry, biochemistry, neuroscience and English.")
-
-print("\n")
-
-evaluate("Jonathan, Don’t sweat it, donate it! Hello Jonathan, Do you have a long to-do list this summer? Does it include figuring out what to do with that car that’s been sitting in your driveway for months? Don’t sweat it, donate it! Music for All can use the proceeds to help continue to create, provide, and expand positively life-changing experiences through music for all. Vehicle donations are tax-deductible, and we work to get the highest return per vehicle for us and for your tax benefit. In most cases, when the driver arrives for your tax-deductible gift, you’ll be provided with the donation receipt. You will be mailed a thank-you letter within 30 days of the sale of the vehicle, which also serves as a donation tax receipt. ")
-
-        
-
-            
-
-
-
-
-
-
-
+message_input = sys.stdin.read()
+evaluate(message_input)

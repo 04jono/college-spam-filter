@@ -1,13 +1,16 @@
 const fs = require('fs');
 const readline = require('readline');
 const {google} = require('googleapis');
-
+const {PythonShell} = require('python-shell');
 // If modifying these scopes, delete token.json.
 const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
 // The file token.json stores the user's access and refresh tokens, and is
 // created automatically when the authorization flow completes for the first
 // time.
 const TOKEN_PATH = 'token.json';
+
+const argument = process.argv[2];
+
 
 // Load client secrets from a local file.
 fs.readFile('credentials.json', (err, content) => {
@@ -68,25 +71,25 @@ function getNewToken(oAuth2Client, callback) {
 
 
 async function start(auth){
-  const messageID = await getLatestID(auth);
+  const messageID = await getID(auth, argument);
 
-  const messageToEval = await getLatestMessage(auth, messageID);
+  const messageToEval = await getMessage(auth, messageID);
 
-  console.log(messageToEval);
+  await naiveBayes(messageToEval);
 }
 
-function getLatestID(auth) {
+function getID(auth, index) {
   return new Promise((resolve, reject) =>{
     const gmail = google.gmail({version: 'v1', auth});
-    // Find ID of latest message
+    // Find ID of message given index starting from latest message
     gmail.users.messages.list({
       userId: 'me',
-      maxResults: 2,
+      maxResults: index+1,
     }, (err, res) => {
       if (err) reject("API ERROR");
       const messages = res.data.messages;
       if (messages.length) {
-        var messageID = messages[1].id;
+        var messageID = messages[index].id;
         resolve(messageID);
       } else {
         reject("No messages found");
@@ -95,7 +98,7 @@ function getLatestID(auth) {
   });
 }
 
-function getLatestMessage(auth, messageID){
+function getMessage(auth, messageID){
   return new Promise((resolve, reject) => {
     const gmail = google.gmail({version: 'v1', auth});
     //Retrieve message from ID
@@ -118,5 +121,23 @@ function getLatestMessage(auth, messageID){
       resolve(messageString);
     });
 
+  });
+}
+
+function naiveBayes(str){
+  return new Promise((resolve, reject) =>{
+    var pyshell = new PythonShell('./data/naivebayes.py');
+
+    pyshell.send(str);
+
+    pyshell.on('message', function (message) {
+      console.log(message);
+      resolve(message);
+    });
+    
+    // end the input stream and allow the process to exit
+    pyshell.end(function (err) {
+      if (err) reject(err);
+    });
   });
 }
